@@ -62,10 +62,10 @@ public class PreparedHandler {
         for (String allClass : allClasses) {
             Class<?> clazz = Class.forName(allClass);
             WebServlet annotation = clazz.getAnnotation(WebServlet.class);
-            if(annotation != null){//有@WebServlet
+            Class<?> superclass = clazz.getSuperclass();
+            if(annotation != null && superclass == HttpServlet.class){//有@WebServlet 且继承了httpServlet
                 map.put(annotation.value(), allClass);
-                Class<?> superclass = clazz.getSuperclass();
-                if(annotation.loadOnStartup() > 0 && superclass == HttpServlet.class){
+                if(annotation.loadOnStartup() > 0 && superclass == HttpServlet.class){//servlet预装载
                     Constant.servletMap.put(allClass, (HttpServlet) clazz.newInstance());
                     System.out.println("--->" + allClass + "已装载");
                 }

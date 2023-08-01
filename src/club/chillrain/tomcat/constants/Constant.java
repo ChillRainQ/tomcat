@@ -5,32 +5,87 @@ import club.chillrain.tomcat.core.PreparedHandler;
 import club.chillrain.tomcat.enums.Status;
 
 import java.io.File;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.util.*;
+import java.util.concurrent.LinkedBlockingDeque;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 /**
+ * 常量
  * @author ChillRain 2023 07 30
  */
 public class Constant {
-    public static Map<String, HttpServlet> servletMap = new HashMap<>();
-    public static final String src = "D:/IDEA项目/tomcat/src";
-    public static final Map<Integer, String> statusMap = Status.init();
-    private static final List<String> allClasses = PreparedHandler.getAllClasses(new File(src));
+    /**
+     * 存储servlet的表
+     */
+    public static final Map<String, HttpServlet> servletMap;
+    /**
+     * 项目路径
+     */
+    public static final String src;
+
+    /**
+     * HTTP响应码表
+     */
+    public static final Map<Integer, String> statusMap;
+    /**
+     * 所有的类
+     */
+    private static final List<String> allClasses;
+    /**
+     * uri映射表
+     */
     public static final Map<String, String> uriMap;
+    /**
+     * 工作线程池
+     */
+    public static final ThreadPoolExecutor servletPool;
+
+    public static void init(){}
 
     static {
         try {
+            src = getProjectSrc();
+            statusMap = Status.init();
+            servletMap = new HashMap<>();
+            allClasses = PreparedHandler.getAllClasses(new File(src));
             uriMap = PreparedHandler.initURIMapping(allClasses);
+            servletPool = servletPoolInit();
         } catch (ClassNotFoundException e) {
             throw new RuntimeException(e);
         } catch (InstantiationException e) {
             throw new RuntimeException(e);
         } catch (IllegalAccessException e) {
             throw new RuntimeException(e);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
     }
+
+    private static ThreadPoolExecutor servletPoolInit() throws IOException {
+        Properties properties = new Properties();
+        properties.load(new FileInputStream("resources/config.properties"));
+        return new ThreadPoolExecutor(
+                Integer.valueOf((String) properties.get("tomcat.core-poolsize")),
+                Integer.valueOf((String) properties.get("tomcat.max-threads")),
+                Integer.valueOf((String) properties.get("tomcat.keep-alivetime")),
+                TimeUnit.SECONDS,
+                new LinkedBlockingDeque<>(),
+                new ThreadPoolExecutor.AbortPolicy()
+        );
+    }
+    public static String getProjectSrc() throws IOException {
+        Properties properties = new Properties();
+        properties.load(new FileInputStream("resources/config.properties"));
+        return properties.getProperty("tomcat.src");
+    }
+
+    /**
+     * 错误页
+     */
     public static String errorPage = "<!doctype html>\n" +
             "   <html lang=\"zh\">\n" +
             "      <head>\n" +
@@ -61,5 +116,4 @@ public class Constant {
             "         </h3>\n" +
             "</body>\n" +
             "</html>";
-
 }
