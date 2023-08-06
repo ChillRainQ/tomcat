@@ -2,8 +2,10 @@ package club.chillrain.tomcat.impl;
 
 import club.chillrain.servlet.MyServletRequest;
 
+import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.StringReader;
 import java.net.Socket;
 import java.util.HashMap;
 import java.util.Map;
@@ -14,41 +16,96 @@ import java.util.Map;
  */
 public class MyHttpServletRequestImpl implements MyServletRequest {
     /**
+     * 请求的socket
+     */
+    private Socket socket;
+    /**
      * 请求报文
      */
-    private final String requestContent;
+    private String requestContent;
+    private String requestBody;
     /**
      * 请求中的K-V
      */
     private final Map<String, String> requestMap;
     /**
-     * 请求行
+     * 按行分割的请求报文
      */
-    private final String requestLine;
-    /**
-     * 按行分割的把报文
-     */
-    private final String[] headLine;
-    public MyHttpServletRequestImpl(Socket socket, InputStream inputStream) throws IOException {
-        byte[] temp = new byte[8 * 1024];
-        String ip = socket.getInetAddress().getHostAddress();
-        int len = inputStream.read(temp);
-        this.requestContent = new String(temp, 0, len);
+    private String[] headLine;
+    public MyHttpServletRequestImpl(Socket socket) throws IOException {
+        this.socket = socket;
         this.requestMap = new HashMap<>();
-//        System.out.println("--->这里是完整的请求报文：");
-//        System.out.println(requestContent);
-//        System.out.println("--->请求报文结束");
+        byte[] temp = new byte[8 * 1024];
+        InputStream inputStream = socket.getInputStream();
+        int len = inputStream.read(temp);
+        //获取请求报文
+        this.requestContent = new String(temp, 0, len);
+        System.out.println(requestContent);
+        parseRequestHeader(requestContent);//解析请求头
+        paraseRequestBody(requestContent);//解析请求体
+    }
+
+    /**
+     * 解析请求体
+     * @param requestContent
+     */
+    private void paraseRequestBody(String requestContent) {
+        int endHeaderIndex = requestContent.indexOf("\r\n\r\n");
+        this.requestBody = requestContent.substring(endHeaderIndex + 4);
+        parseKeyValueParamToMap(this.requestBody);
+    }
+
+    /**
+     * 请求头解析
+     */
+    private void parseRequestHeader(String requestContent) throws IOException {
+        String ip = socket.getInetAddress().getHostAddress();
         int startHeaderIndex = requestContent.indexOf("\n");
         int endHeaderIndex = requestContent.indexOf("\r\n\r\n");
+//        this.requestLine = requestContent.substring(0, endHeaderIndex - 1);
         String headerContent = requestContent.substring(startHeaderIndex + 1, endHeaderIndex);
         String[] split = headerContent.split("\r\n");
         this.headLine = requestContent.trim().split("\n");
-        this.requestLine = requestContent.substring(0, endHeaderIndex - 1);
         for (String str : split) {
             int i = str.indexOf(":");
             requestMap.put(str.substring(0, i).toLowerCase(), str.substring(i + 1).trim());
         }
         requestMap.put("ip", ip);
+        paramAndUriParse();
+    }
+    /**
+     * 请求参数和URI解析
+     */
+    private void paramAndUriParse() {
+        int start = this.headLine[0].indexOf("/");
+        int end = this.headLine[0].indexOf("HTTP");
+        String uriAndQueryParam = this.headLine[0].substring(start, end - 1);
+        String uri = null;
+        if(uriAndQueryParam.contains("?")){//可能携带参数
+            int line = uriAndQueryParam.indexOf("?");
+            String queryParam = uriAndQueryParam.substring(line + 1);
+            parseKeyValueParamToMap(queryParam);//解析请求参数
+        }else{//不携带参数
+            uri = uriAndQueryParam;
+        }
+        requestMap.put("uri", uri);
+        requestMap.put("uriAndParamQuery", uriAndQueryParam);
+    }
+
+    /**
+     * 解析请求参数
+     * @param strs
+     */
+    private void parseKeyValueParamToMap(String strs){
+        String[] queryParams = strs.split("&");
+        if(queryParams.length != 0){//参数数量为0
+            for (String param : queryParams) {
+                if(param.contains("=")){
+                    int i = param.indexOf("=");
+                    requestMap.put(param.substring(0, i).toLowerCase(), param.substring(i + 1).trim());
+                }
+            }
+        }
     }
 
     /**
@@ -76,7 +133,7 @@ public class MyHttpServletRequestImpl implements MyServletRequest {
      */
     @Override
     public String getMethod() {
-        String[] split = this.requestLine.split(" ");
+        String[] split = this.headLine[0].split(" ");
         return split[0];
     }
 
@@ -86,15 +143,7 @@ public class MyHttpServletRequestImpl implements MyServletRequest {
      */
     @Override
     public String getRemoteURI() {
-//        String[] split = this.requestLine.split("\r\n");
-//        String firstLine = split[0];
-//        int start = firstLine.indexOf("/");
-//        int end = firstLine.indexOf("HTTP");
-//        String uri = firstLine.substring(start, end - 1);
-        int start = this.headLine[0].indexOf("/");
-        int end = this.headLine[0].indexOf("HTTP");
-        String uri = this.headLine[0].substring(start, end - 1);
-        return uri;
+        return requestMap.get("uri");
     }
 
     /**
@@ -106,7 +155,10 @@ public class MyHttpServletRequestImpl implements MyServletRequest {
         int start = this.headLine[0].lastIndexOf(" ");
         int end = this.headLine[0].lastIndexOf("/");
         String agreement = this.headLine[0].substring(start + 1, end);
-        String url = agreement.toLowerCase() +"://" + getHeader("host") + getRemoteURI();
+        String url = agreement.toLowerCase()//请求协议
+                + "://" //分隔符
+                + socket.getLocalAddress().getHostAddress()
+                + this.requestMap.get("uriAndParamQuery");//请求资源与参数
         return url.trim();
     }
 
@@ -126,6 +178,13 @@ public class MyHttpServletRequestImpl implements MyServletRequest {
      */
     @Override
     public String getParameter(String key) {
-        return requestMap.get(key);
+        String param = requestMap.get(key);
+        param = param == null ? "null" : param;
+        return param;
+    }
+
+    @Override
+    public BufferedReader getReader() {
+        return new BufferedReader(new StringReader(this.requestBody));
     }
 }

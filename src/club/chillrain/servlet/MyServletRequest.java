@@ -1,5 +1,6 @@
 package club.chillrain.servlet;
 
+import java.io.BufferedReader;
 import java.util.Map;
 
 public interface MyServletRequest {
@@ -46,4 +47,5 @@ public interface MyServletRequest {
      * @return
      */
     String getParameter(String key);
+    BufferedReader getReader();
 }

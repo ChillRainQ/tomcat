@@ -8,6 +8,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintWriter;
+import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
@@ -38,9 +39,9 @@ public class MyHttpServletResponseImpl implements MyServletResponse {
      */
     private OutputStream outputStream;
 
-    public MyHttpServletResponseImpl(OutputStream outputStream) {
-        this.outputStream = outputStream;
+    public MyHttpServletResponseImpl(Socket socket) throws IOException {
         this.status = 200;
+        this.outputStream = socket.getOutputStream();
         headMap.put("Content-Type", "text/html;charset=utf8");
         this.byteStream = new ByteArrayOutputStream();
         this.writer = new PrintWriter(byteStream);
@@ -49,7 +50,6 @@ public class MyHttpServletResponseImpl implements MyServletResponse {
 
     @Override
     public void setCharacterEncoding(String charset) {
-
     }
 
     @Override

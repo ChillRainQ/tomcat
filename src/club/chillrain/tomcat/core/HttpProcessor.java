@@ -25,6 +25,13 @@ public class HttpProcessor {
         this.socket = socket;
     }
 
+    public HttpProcessor() {
+    }
+
+    public void setSocket(Socket socket) {
+        this.socket = socket;
+    }
+
     /**
      * 处理HTTP请求
      * @throws IOException
@@ -33,8 +40,9 @@ public class HttpProcessor {
      * @throws IllegalAccessException
      */
     public void process() throws IOException, ClassNotFoundException, InstantiationException, IllegalAccessException {
-        MyServletRequest request = new MyHttpServletRequestImpl(socket, socket.getInputStream());
-        MyServletResponse response = new MyHttpServletResponseImpl(socket.getOutputStream());
+        System.out.println("--->" + Thread.currentThread() + "处理请求");
+        MyServletRequest request = new MyHttpServletRequestImpl(socket);
+        MyServletResponse response = new MyHttpServletResponseImpl(socket);
         String uri = request.getRemoteURI();
         System.out.println("--->请求URI为：" + uri);
         if("/".equals(uri)){//首页

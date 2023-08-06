@@ -1,6 +1,7 @@
 package club.chillrain.tomcat.constants;
 
 import club.chillrain.servlet.HttpServlet;
+import club.chillrain.tomcat.core.HttpProcessor;
 import club.chillrain.tomcat.core.PreparedHandler;
 import club.chillrain.tomcat.enums.Status;
 

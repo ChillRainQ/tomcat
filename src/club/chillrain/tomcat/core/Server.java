@@ -9,6 +9,7 @@ import club.chillrain.tomcat.impl.MyHttpServletRequestImpl;
 import club.chillrain.tomcat.impl.MyHttpServletResponseImpl;
 
 import java.io.*;
+import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.HashMap;
@@ -25,8 +26,8 @@ import java.util.concurrent.TimeUnit;
 public class Server {
     //    public static Map<String, HttpServlet> servletMap = new HashMap<>();
     public static void main(String[] args) throws IOException {
-        Constant.init();
-        ServerSocket serverSocket = Server.serverInit();
+        Constant.init();//常量初始化
+        ServerSocket serverSocket = Server.serverInit();//服务器初始化（读取配置文件）
         while (true) {
             System.out.println("--->" + Thread.currentThread() +"准备接收HTTP请求");
             Socket socket = serverSocket.accept();
@@ -47,7 +48,8 @@ public class Server {
         int port = 8080;
         int readPort = Integer.valueOf((String) properties.get("tomcat.port"));
         port = readPort != 0 ? readPort : port;
-        ServerSocket serverSocket = new ServerSocket(port);
+        ServerSocket serverSocket = new ServerSocket();
+        serverSocket.bind(new InetSocketAddress("0.0.0.0", port));
         System.out.println("--->服务开始于端口：" + port);
         return serverSocket;
     }
@@ -74,6 +76,12 @@ public class Server {
                 throw new RuntimeException(e);
             } catch (IllegalAccessException e) {
                 throw new RuntimeException(e);
+            } finally {
+                try {
+                    socket.close();
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
             }
         }
     }
