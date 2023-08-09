@@ -5,8 +5,7 @@ import club.chillrain.servlet.MyServletRequest;
 import club.chillrain.servlet.MyServletResponse;
 import club.chillrain.servlet.annotation.WebServlet;
 
-import java.io.BufferedReader;
-import java.io.IOException;
+import java.io.*;
 
 /**
  * @author ChillRain 2023 08 02
@@ -15,16 +14,30 @@ import java.io.IOException;
 public class HelloServlet extends HttpServlet {
     @Override
     public void service(MyServletRequest request, MyServletResponse response) throws IOException {
-        String name = request.getParameter("name");
-        response.getWriter().write(name);
-        response.getWriter().write(request.getRemoteAddr());
-        BufferedReader reader = request.getReader();
-        String temp ="";
-        StringBuilder sb = new StringBuilder();
-        while((temp = reader.readLine()) != null){
-            sb.append(temp);
+//        String name = request.getParameter("name");
+//        response.getWriter().write(name);
+//        response.getWriter().write(request.getRemoteAddr());
+        response.setContentType("image/png");
+//        InputStream inputStream = request.getInputStream();
+        OutputStream outputStream = response.getOutputStream();
+        int len = 0;
+        byte[] buffer = new byte[1024];
+        FileInputStream fis = new FileInputStream(new File("D:\\ChillRainProject\\tomcat\\resources\\wakamo.png"));
+        BufferedInputStream bis = new BufferedInputStream(fis);
+        while((len = bis.read(buffer)) != -1){
+            outputStream.write(buffer, 0 , len);
         }
-        System.out.println(sb);
-        reader.close();
+        outputStream.flush();
+        outputStream.close();
+
+//        while ()
+//        BufferedReader reader = request.getReader();
+//        String temp ="";
+//        StringBuilder sb = new StringBuilder();
+//        while((temp = reader.readLine()) != null){
+//            sb.append(temp);
+//        }
+////        System.out.println(sb);
+//        reader.close();
     }
 }

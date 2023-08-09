@@ -1,5 +1,6 @@
 package club.chillrain.servlet;
 
+import java.io.OutputStream;
 import java.io.PrintWriter;
 
 public interface MyServletResponse {
@@ -30,4 +31,6 @@ public interface MyServletResponse {
      * 设定响应码
      */
     void setStatus(Integer status);
+
+    OutputStream getOutputStream();
 }

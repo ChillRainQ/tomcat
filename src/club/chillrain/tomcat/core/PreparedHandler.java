@@ -1,21 +1,27 @@
 package club.chillrain.tomcat.core;
 
 import club.chillrain.servlet.HttpServlet;
+import club.chillrain.servlet.Servlet;
 import club.chillrain.servlet.annotation.WebServlet;
 import club.chillrain.tomcat.constants.Constant;
+import club.chillrain.tomcat.constants.TomcatContext;
+import club.chillrain.tomcat.factory.ServletFactoryImpl;
+import club.chillrain.tomcat.interfaces.abstracts.ServletFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
-import java.lang.annotation.Annotation;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 /**
- * 扫描项目中的所有类
+ * 预处理类
  * @author ChillRain 2023 07 30
  */
 public class PreparedHandler {
+    private final static Logger LOGGER = LoggerFactory.getLogger("Prepare");
     /**
      * 全限定类名
      */
@@ -52,7 +58,7 @@ public class PreparedHandler {
         return packageName + "." + file.getName().replace(".java", "");
     }
     /**
-     * 通过反射检查类上是否有@WebServlet，并获取其value值，放入List中
+     * 通过反射进行URI与HttpServlet子类做映射
      * 使其与全限定类名做绑定
      * @param allClasses 全限定类名
      * @return
@@ -66,8 +72,10 @@ public class PreparedHandler {
             if(annotation != null && superclass == HttpServlet.class){//有@WebServlet 且继承了httpServlet
                 map.put(annotation.value(), allClass);
                 if(annotation.loadOnStartup() > 0 && superclass == HttpServlet.class){//servlet预装载
-                    Constant.servletMap.put(allClass, (HttpServlet) clazz.newInstance());
-                    System.out.println("--->" + allClass + "已装载");
+                    ServletFactory servletFactory = new ServletFactoryImpl();
+                    HttpServlet servlet = (HttpServlet) servletFactory.createServlet(clazz);
+                    TomcatContext.servletContext.put(allClass,servlet);
+                    LOGGER.info("--->" + allClass + "已装载");
                 }
             }
         }

@@ -1,13 +1,11 @@
 package club.chillrain.tomcat.constants;
 
 import club.chillrain.servlet.HttpServlet;
-import club.chillrain.tomcat.core.HttpProcessor;
 import club.chillrain.tomcat.core.PreparedHandler;
 import club.chillrain.tomcat.enums.Status;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.LinkedBlockingDeque;
@@ -22,7 +20,7 @@ public class Constant {
     /**
      * 存储servlet的表
      */
-    public static final Map<String, HttpServlet> servletMap;
+//    public static final Map<String, HttpServlet> servletContext;
     /**
      * 项目路径
      */
@@ -43,7 +41,7 @@ public class Constant {
     /**
      * 工作线程池
      */
-    public static final ThreadPoolExecutor servletPool;
+//    public static final ThreadPoolExecutor servletPool;
 
     public static void init(){}
 
@@ -51,10 +49,10 @@ public class Constant {
         try {
             src = getProjectSrc();
             statusMap = Status.init();
-            servletMap = new HashMap<>();
+//            servletContext = new HashMap<>();
             allClasses = PreparedHandler.getAllClasses(new File(src));
             uriMap = PreparedHandler.initURIMapping(allClasses);
-            servletPool = servletPoolInit();
+//            servletPool = servletPoolInit();
         } catch (ClassNotFoundException e) {
             throw new RuntimeException(e);
         } catch (InstantiationException e) {
@@ -66,18 +64,18 @@ public class Constant {
         }
     }
 
-    private static ThreadPoolExecutor servletPoolInit() throws IOException {
-        Properties properties = new Properties();
-        properties.load(new FileInputStream("resources/config.properties"));
-        return new ThreadPoolExecutor(
-                Integer.valueOf((String) properties.get("tomcat.core-poolsize")),
-                Integer.valueOf((String) properties.get("tomcat.max-threads")),
-                Integer.valueOf((String) properties.get("tomcat.keep-alivetime")),
-                TimeUnit.SECONDS,
-                new LinkedBlockingDeque<>(),
-                new ThreadPoolExecutor.AbortPolicy()
-        );
-    }
+//    private static ThreadPoolExecutor servletPoolInit() throws IOException {
+//        Properties properties = new Properties();
+//        properties.load(new FileInputStream("resources/config.properties"));
+//        return new ThreadPoolExecutor(
+//                Integer.valueOf((String) properties.get("tomcat.core-poolsize")),
+//                Integer.valueOf((String) properties.get("tomcat.max-threads")),
+//                Integer.valueOf((String) properties.get("tomcat.keep-alivetime")),
+//                TimeUnit.SECONDS,
+//                new LinkedBlockingDeque<>(),
+//                new ThreadPoolExecutor.AbortPolicy()
+//        );
+//    }
     public static String getProjectSrc() throws IOException {
         Properties properties = new Properties();
         properties.load(new FileInputStream("resources/config.properties"));

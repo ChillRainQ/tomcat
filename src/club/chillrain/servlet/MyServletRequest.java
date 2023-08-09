@@ -1,6 +1,7 @@
 package club.chillrain.servlet;
 
 import java.io.BufferedReader;
+import java.io.InputStream;
 import java.util.Map;
 
 public interface MyServletRequest {
@@ -48,4 +49,6 @@ public interface MyServletRequest {
      */
     String getParameter(String key);
     BufferedReader getReader();
+
+    InputStream getInputStream();
 }

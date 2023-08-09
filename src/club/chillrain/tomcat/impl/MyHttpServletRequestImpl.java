@@ -1,12 +1,12 @@
 package club.chillrain.tomcat.impl;
 
 import club.chillrain.servlet.MyServletRequest;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.StringReader;
+import java.io.*;
 import java.net.Socket;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -15,6 +15,7 @@ import java.util.Map;
  * @author ChillRain 2023 07 22
  */
 public class MyHttpServletRequestImpl implements MyServletRequest {
+    private static final Logger LOGGER = LoggerFactory.getLogger("servletRequest");
     /**
      * 请求的socket
      */
@@ -23,6 +24,9 @@ public class MyHttpServletRequestImpl implements MyServletRequest {
      * 请求报文
      */
     private String requestContent;
+    /**
+     * 请求体
+     */
     private String requestBody;
     /**
      * 请求中的K-V
@@ -32,6 +36,10 @@ public class MyHttpServletRequestImpl implements MyServletRequest {
      * 按行分割的请求报文
      */
     private String[] headLine;
+    /**
+     * 二进制请求体数据
+     */
+    private byte[] requestBodyBytes;
     public MyHttpServletRequestImpl(Socket socket) throws IOException {
         this.socket = socket;
         this.requestMap = new HashMap<>();
@@ -40,19 +48,68 @@ public class MyHttpServletRequestImpl implements MyServletRequest {
         int len = inputStream.read(temp);
         //获取请求报文
         this.requestContent = new String(temp, 0, len);
-        System.out.println(requestContent);
+//        System.out.println(requestContent);
         parseRequestHeader(requestContent);//解析请求头
-        paraseRequestBody(requestContent);//解析请求体
+        parseRequestBody(requestContent);//解析请求体
     }
 
+    /**
+     * 二进制请求体解析
+     * @param incompleteBodyBytes
+     * @throws IOException
+     */
+    private void parseBinaryBody(byte[] incompleteBodyBytes) throws IOException {
+        if(requestMap.containsKey("content-length")){//可能包含二进制请求体
+            int contentLength = Integer.parseInt(requestMap.get("content-length"));//请求体长度
+            LOGGER.info("--->请求体长度：" + contentLength);
+            int incompleteBodyLength = incompleteBodyBytes.length;//第一次中不完整的请求体长度
+            LOGGER.info("--->不完整的请求体：" + incompleteBodyLength);
+            int residueBodyLength = contentLength - incompleteBodyLength;
+            LOGGER.info("--->还应当接收：" + residueBodyLength);
+            ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+            byte[] bufferBytes = null;
+            if(residueBodyLength > 0){
+                bufferBytes = new byte[65536];//一个TCP包的大小
+            }
+            byteArrayOutputStream.write(incompleteBodyBytes);//第一次中不完整的请求体
+            int nowResidueBodyBytesLength = 0;
+            //            while (nowResidueBodyBytesLength < residueBodyLength){//循环读取剩余的请求体
+//                int readLength = inputStream.read(bufferBytes);
+//                nowResidueBodyBytesLength += readLength;
+//                byteArrayOutputStream.write(bufferBytes, 0 , readLength);
+//            }
+            InputStream inputStream = socket.getInputStream();
+            int readLength = 0;
+            while(residueBodyLength != 0){
+                readLength = inputStream.read(bufferBytes);
+                byteArrayOutputStream.write(bufferBytes, 0 , readLength);
+                if(readLength < 65536) break;
+            }
+            byte[] requestBodyBytes = byteArrayOutputStream.toByteArray();
+            LOGGER.info("--->完整的请求体长度：" + requestBodyBytes.length);
+//            LOGGER.info("请求体报文：" + "\n" + new String(requestBodyBytes, StandardCharsets.UTF_8));
+            byteArrayOutputStream.close();
+            this.requestBodyBytes = requestBodyBytes;
+        }
+    }
     /**
      * 解析请求体
      * @param requestContent
      */
-    private void paraseRequestBody(String requestContent) {
+    private void parseRequestBody(String requestContent) throws IOException {
         int endHeaderIndex = requestContent.indexOf("\r\n\r\n");
         this.requestBody = requestContent.substring(endHeaderIndex + 4);
-        parseKeyValueParamToMap(this.requestBody);
+        String contentType = this.requestMap.get("content-type");
+        if(contentType == null) {
+            return;
+        }
+        if(contentType.trim().contains("multipart/form-data")){//请求体是携带了二进制数据的表单
+            byte[] incompleteBodyBytes = this.requestBody.getBytes(StandardCharsets.ISO_8859_1);
+            parseBinaryBody(incompleteBodyBytes);
+        }
+        if ("application/x-www-form-urlencoded".equals(contentType)){//请求体是表单
+            parseKeyValueParamToMap(this.requestBody);
+        }
     }
 
     /**
@@ -83,6 +140,7 @@ public class MyHttpServletRequestImpl implements MyServletRequest {
         String uri = null;
         if(uriAndQueryParam.contains("?")){//可能携带参数
             int line = uriAndQueryParam.indexOf("?");
+            uri = uriAndQueryParam.substring(0, line);
             String queryParam = uriAndQueryParam.substring(line + 1);
             parseKeyValueParamToMap(queryParam);//解析请求参数
         }else{//不携带参数
@@ -186,5 +244,10 @@ public class MyHttpServletRequestImpl implements MyServletRequest {
     @Override
     public BufferedReader getReader() {
         return new BufferedReader(new StringReader(this.requestBody));
+    }
+
+    @Override
+    public InputStream getInputStream() {
+        return new ByteArrayInputStream(this.requestBodyBytes);
     }
 }

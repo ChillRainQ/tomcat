@@ -3,6 +3,8 @@ package club.chillrain.tomcat.impl;
 import club.chillrain.servlet.MyServletResponse;
 import club.chillrain.tomcat.constants.Constant;
 import club.chillrain.tomcat.enums.Status;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -17,6 +19,11 @@ import java.util.Map;
  * @author ChillRain 2023 07 22
  */
 public class MyHttpServletResponseImpl implements MyServletResponse {
+    private static final Logger LOGGER = LoggerFactory.getLogger("servletResponse");
+    /**
+     * HTTP请求的Socket连接
+     */
+    private final Socket socket;
     /**
      * 响应头表
      */
@@ -37,14 +44,16 @@ public class MyHttpServletResponseImpl implements MyServletResponse {
     /**
      * 响应报文的输出流
      */
-    private OutputStream outputStream;
+    private OutputStream userOutputStream;
 
     public MyHttpServletResponseImpl(Socket socket) throws IOException {
+        this.socket = socket;
         this.status = 200;
-        this.outputStream = socket.getOutputStream();
+//        this.outputStream = socket.getOutputStream();
         headMap.put("Content-Type", "text/html;charset=utf8");
         this.byteStream = new ByteArrayOutputStream();
         this.writer = new PrintWriter(byteStream);
+        this.userOutputStream = new ByteArrayOutputStream();
 
     }
 
@@ -71,6 +80,12 @@ public class MyHttpServletResponseImpl implements MyServletResponse {
     public void setStatus(Integer status) {
         this.status = status;
     }
+
+    @Override
+    public OutputStream getOutputStream() {
+        return this.userOutputStream;
+    }
+
     private void prepareResponseHeader(){//响应头准备
         this.content = new StringBuffer();
         this.content.append("HTTP/1.1 ").append(this.status).append(" " + Constant.statusMap.get(this.status)).append("\r\n");//拼接响应行
@@ -82,13 +97,16 @@ public class MyHttpServletResponseImpl implements MyServletResponse {
     public void finishedResponse() throws IOException {
         this.writer.flush();
         byte[] byteArray = this.byteStream.toByteArray();//用户写入的内容
+        OutputStream outputStream = socket.getOutputStream();
         prepareResponseHeader();
         //写入响应头
-        this.outputStream.write(this.content.toString().getBytes(StandardCharsets.UTF_8));
+        outputStream.write(this.content.toString().getBytes(StandardCharsets.UTF_8));
         //写入响应体
-        this.outputStream.write(byteArray);
+        outputStream.write(byteArray);
+        outputStream.write(((ByteArrayOutputStream)this.userOutputStream).toByteArray());
         this.writer.close();
         this.byteStream.close();
-        System.out.println("--->响应已返回");
+//        System.out.println("--->响应已返回");
+        LOGGER.info("--->响应已返回");
     }
 }
