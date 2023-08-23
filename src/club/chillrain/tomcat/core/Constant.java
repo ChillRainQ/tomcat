@@ -1,16 +1,11 @@
-package club.chillrain.tomcat.constants;
+package club.chillrain.tomcat.core;
 
-import club.chillrain.servlet.HttpServlet;
-import club.chillrain.tomcat.core.PreparedHandler;
 import club.chillrain.tomcat.enums.Status;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.*;
-import java.util.concurrent.LinkedBlockingDeque;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
 
 /**
  * 常量
@@ -33,11 +28,11 @@ public class Constant {
     /**
      * 所有的类
      */
-    private static final List<String> allClasses;
+//    private static final List<String> allClasses;
     /**
      * uri映射表
      */
-    public static final Map<String, String> uriMap;
+//    public static final Map<String, String> uriMap;
     /**
      * 工作线程池
      */
@@ -50,15 +45,9 @@ public class Constant {
             src = getProjectSrc();
             statusMap = Status.init();
 //            servletContext = new HashMap<>();
-            allClasses = PreparedHandler.getAllClasses(new File(src));
-            uriMap = PreparedHandler.initURIMapping(allClasses);
+//            allClasses = Prepare.getAllClasses(new File(src));
+//            uriMap = PreparedHandler.initURIMapping(allClasses);
 //            servletPool = servletPoolInit();
-        } catch (ClassNotFoundException e) {
-            throw new RuntimeException(e);
-        } catch (InstantiationException e) {
-            throw new RuntimeException(e);
-        } catch (IllegalAccessException e) {
-            throw new RuntimeException(e);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

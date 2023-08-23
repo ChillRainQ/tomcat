@@ -1,24 +1,19 @@
-package club.chillrain.servlet;
+package club.chillrain.servlet.servlet;
 
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.util.Map;
 
 public interface MyServletRequest {
-    /**
-     * 通过key获取val
-     * @param key
-     * @return
-     */
+    HttpSession getSession();
+    Cookie[] getCookies();
+    ServletContext getServletContext();
     String getHeader(String key);
 
-    /**
-     * 获取所有的请求头的key
-     *
-     * @return
-     */
     Map<String, String> getHeaders();
 
+    void setAttribute(String key, Object val);
+    Object getAttribute(String key);
     /**
      * 获取这次请求的请求方法
      * @return
@@ -51,4 +46,6 @@ public interface MyServletRequest {
     BufferedReader getReader();
 
     InputStream getInputStream();
+
+    RequestDispatcher getRequestDispatcher(String uri);
 }

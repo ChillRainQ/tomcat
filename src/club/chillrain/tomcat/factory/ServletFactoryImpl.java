@@ -1,6 +1,6 @@
 package club.chillrain.tomcat.factory;
 
-import club.chillrain.servlet.HttpServlet;
+import club.chillrain.servlet.servlet.HttpServlet;
 import club.chillrain.tomcat.interfaces.abstracts.ServletFactory;
 
 /**

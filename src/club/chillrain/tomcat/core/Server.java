@@ -1,7 +1,6 @@
 package club.chillrain.tomcat.core;
 
-import club.chillrain.tomcat.constants.Constant;
-import club.chillrain.tomcat.constants.TomcatContext;
+import club.chillrain.tomcat.config.TomcatConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -9,6 +8,7 @@ import java.io.*;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.security.NoSuchAlgorithmException;
 import java.util.Properties;
 
 /**
@@ -17,18 +17,18 @@ import java.util.Properties;
  */
 public class Server {
     private final static Logger LOGGER = LoggerFactory.getLogger("Server");
-    public static void main(String[] args) throws IOException {
+    public void start() throws IOException, ClassNotFoundException, InstantiationException, IllegalAccessException {
         Constant.init();//常量初始化
-        TomcatContext.tomcatInit();
+        TomcatConfig.tomcatInit();
+        ServletRunner servletRunner = new ServletRunner();  //初始化Servlet运行环境
+        servletRunner.init();
         ServerSocket serverSocket = Server.serverInit();//服务器初始化（读取配置文件）
         while (true) {
             LOGGER.info("--->" + Thread.currentThread() +"准备接收HTTP请求");
-//            System.out.println("--->" + Thread.currentThread() +"准备接收HTTP请求");
             Socket socket = serverSocket.accept();
             Work work = new Work(socket);
             LOGGER.info("--->" + Thread.currentThread() +"已分发HTTP请求");
-//            System.out.println("--->" + Thread.currentThread() +"已分发HTTP请求");
-            TomcatContext.workThreadPool.execute(work);
+            TomcatConfig.workThreadPool.execute(work);
         }
     }
 
@@ -46,7 +46,6 @@ public class Server {
         port = readPort != 0 ? readPort : port;
         ServerSocket serverSocket = new ServerSocket();
         serverSocket.bind(new InetSocketAddress("0.0.0.0", port));
-//        System.out.println("--->服务开始于端口：" + port);
         LOGGER.info("--->服务开始于端口：" + port);
         return serverSocket;
     }
@@ -63,9 +62,8 @@ public class Server {
         @Override
         public void run() {
             try {
-                new HttpProcessor(socket).process();
+                new ServletRunner.Processor(socket).process();
                 socket.close();
-//                System.out.println("--->已完成请求");
                 LOGGER.info("--->已完成请求");
             } catch (IOException e) {
                 throw new RuntimeException(e);
@@ -75,12 +73,8 @@ public class Server {
                 throw new RuntimeException(e);
             } catch (IllegalAccessException e) {
                 throw new RuntimeException(e);
-            } finally {
-                try {
-                    socket.close();
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
+            } catch (NoSuchAlgorithmException e) {
+                throw new RuntimeException(e);
             }
         }
     }

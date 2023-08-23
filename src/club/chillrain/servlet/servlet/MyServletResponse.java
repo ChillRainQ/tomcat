@@ -1,4 +1,4 @@
-package club.chillrain.servlet;
+package club.chillrain.servlet.servlet;
 
 import java.io.OutputStream;
 import java.io.PrintWriter;
@@ -33,4 +33,11 @@ public interface MyServletResponse {
     void setStatus(Integer status);
 
     OutputStream getOutputStream();
+    void setRedirect(String uri);
+
+    /**
+     * 清空响应体
+     */
+    void reset();
+    void addCookie(Cookie cookie);
 }

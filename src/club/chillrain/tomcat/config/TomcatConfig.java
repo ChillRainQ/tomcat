@@ -1,15 +1,11 @@
-package club.chillrain.tomcat.constants;
+package club.chillrain.tomcat.config;
 
 /**
  * @author ChillRain 2023 08 03
  */
 
-import club.chillrain.servlet.HttpServlet;
-
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -18,14 +14,11 @@ import java.util.concurrent.TimeUnit;
 /**
  * tomcat配置
  */
-public class TomcatContext {
+public class TomcatConfig {
     public static final ThreadPoolExecutor workThreadPool;
-    public static final Map<String, HttpServlet> servletContext;
-
 
     static {
         try {
-            servletContext = new HashMap<>();
             workThreadPool = servletPoolInit();
         } catch (IOException e) {
             throw new RuntimeException(e);

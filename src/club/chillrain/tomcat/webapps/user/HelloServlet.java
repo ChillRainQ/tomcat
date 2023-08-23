@@ -1,8 +1,8 @@
 package club.chillrain.tomcat.webapps.user;
 
-import club.chillrain.servlet.HttpServlet;
-import club.chillrain.servlet.MyServletRequest;
-import club.chillrain.servlet.MyServletResponse;
+import club.chillrain.servlet.servlet.HttpServlet;
+import club.chillrain.servlet.servlet.MyServletRequest;
+import club.chillrain.servlet.servlet.MyServletResponse;
 import club.chillrain.servlet.annotation.WebServlet;
 
 import java.io.*;
@@ -21,8 +21,8 @@ public class HelloServlet extends HttpServlet {
 //        InputStream inputStream = request.getInputStream();
         OutputStream outputStream = response.getOutputStream();
         int len = 0;
-        byte[] buffer = new byte[1024];
-        FileInputStream fis = new FileInputStream(new File("D:\\ChillRainProject\\tomcat\\resources\\wakamo.png"));
+        byte[] buffer = new byte[65536];
+        FileInputStream fis = new FileInputStream(new File("C:\\JavaCode\\tomcat\\resources\\wakamo.png"));
         BufferedInputStream bis = new BufferedInputStream(fis);
         while((len = bis.read(buffer)) != -1){
             outputStream.write(buffer, 0 , len);
@@ -39,5 +39,6 @@ public class HelloServlet extends HttpServlet {
 //        }
 ////        System.out.println(sb);
 //        reader.close();
+        request.getSession();
     }
 }

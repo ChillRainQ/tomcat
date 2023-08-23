@@ -1,6 +1,12 @@
-package club.chillrain.tomcat.impl;
+package club.chillrain.tomcat.context.request;
 
-import club.chillrain.servlet.MyServletRequest;
+import club.chillrain.servlet.listener.*;
+import club.chillrain.servlet.servlet.*;
+import club.chillrain.tomcat.context.MyServletContextImpl;
+import club.chillrain.tomcat.core.MyCookie;
+import club.chillrain.tomcat.core.SessionManager;
+import club.chillrain.tomcat.factory.ListenerFactoryImpl;
+import club.chillrain.tomcat.impl.RequestDispatcherImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -15,7 +21,10 @@ import java.util.Map;
  * @author ChillRain 2023 07 22
  */
 public class MyHttpServletRequestImpl implements MyServletRequest {
-    private static final Logger LOGGER = LoggerFactory.getLogger("servletRequest");
+    private static final Logger LOGGER = LoggerFactory.getLogger("Request");
+    public HttpSession currentSession;
+
+    public Boolean initSessionMark = false;
     /**
      * 请求的socket
      */
@@ -24,6 +33,8 @@ public class MyHttpServletRequestImpl implements MyServletRequest {
      * 请求报文
      */
     private String requestContent;
+
+    private String requestHeader;
     /**
      * 请求体
      */
@@ -40,17 +51,57 @@ public class MyHttpServletRequestImpl implements MyServletRequest {
      * 二进制请求体数据
      */
     private byte[] requestBodyBytes;
-    public MyHttpServletRequestImpl(Socket socket) throws IOException {
-        this.socket = socket;
+
+    /**
+     * Cookie们
+     */
+    private Cookie[] cookies;
+    /**
+     * 监听器
+     */
+    private ServletRequestListener listener;
+    /**
+     * 域对象功能监听器
+     */
+    private ServletRequestAttributeListener attributeListener;
+    /**
+     * 事件
+     */
+    private ServletRequestEvent event;
+
+    private Map<String, Object> map = new HashMap<>();
+    public MyHttpServletRequestImpl(Socket socket) throws IOException, InstantiationException, IllegalAccessException {
         this.requestMap = new HashMap<>();
+        this.socket = socket;
+        this.listener = (ServletRequestListener) ListenerFactoryImpl.getListener(this);
+        this.attributeListener = (ServletRequestAttributeListener) ListenerFactoryImpl.getAttributeListener(this);
+        LOGGER.info("--->Request正在初始化并解析请求报文......");
         byte[] temp = new byte[8 * 1024];
         InputStream inputStream = socket.getInputStream();
         int len = inputStream.read(temp);
-        //获取请求报文
-        this.requestContent = new String(temp, 0, len);
-//        System.out.println(requestContent);
-        parseRequestHeader(requestContent);//解析请求头
-        parseRequestBody(requestContent);//解析请求体
+        if (len != -1) {
+        //获取请求报文 请求报文应当是ISO_8859_1
+            this.requestContent = new String(temp, 0, len, StandardCharsets.ISO_8859_1);
+            parseRequestHeader(requestContent);//解析请求头
+            parseRequestBody(requestContent);//解析请求体
+            LOGGER.info("--->Request解析完成");
+        }
+    }
+
+    public ServletRequestListener getListener() {
+        return listener;
+    }
+
+    public Listener getAttributeListener() {
+        return attributeListener;
+    }
+
+    public ServletRequestEvent getEvent() {
+        return event;
+    }
+
+    public void setEvent(ServletRequestEvent event) {
+        this.event = event;
     }
 
     /**
@@ -72,19 +123,25 @@ public class MyHttpServletRequestImpl implements MyServletRequest {
                 bufferBytes = new byte[65536];//一个TCP包的大小
             }
             byteArrayOutputStream.write(incompleteBodyBytes);//第一次中不完整的请求体
-            int nowResidueBodyBytesLength = 0;
-            //            while (nowResidueBodyBytesLength < residueBodyLength){//循环读取剩余的请求体
-//                int readLength = inputStream.read(bufferBytes);
-//                nowResidueBodyBytesLength += readLength;
-//                byteArrayOutputStream.write(bufferBytes, 0 , readLength);
-//            }
             InputStream inputStream = socket.getInputStream();
-            int readLength = 0;
-            while(residueBodyLength != 0){
-                readLength = inputStream.read(bufferBytes);
-                byteArrayOutputStream.write(bufferBytes, 0 , readLength);
-                if(readLength < 65536) break;
+            int nowResidueBodyBytesLength = 0;
+            int i = 1;
+            while (nowResidueBodyBytesLength < residueBodyLength){//循环读取剩余的请求体
+                 int readLength = inputStream.read(bufferBytes);
+                 if(readLength == -1){
+                     break;
+                 }
+                 i ++;
+//                 LOGGER.info("--->已接收大小：" + nowResidueBodyBytesLength);
+                 nowResidueBodyBytesLength += readLength;
+                 byteArrayOutputStream.write(bufferBytes, 0 , readLength);
             }
+//            int readLength = 0;
+//            while(residueBodyLength != 0){
+//                readLength = inputStream.read(bufferBytes);
+//                byteArrayOutputStream.write(bufferBytes, 0 , readLength);
+//                if(readLength < 65536) break;
+//            }
             byte[] requestBodyBytes = byteArrayOutputStream.toByteArray();
             LOGGER.info("--->完整的请求体长度：" + requestBodyBytes.length);
 //            LOGGER.info("请求体报文：" + "\n" + new String(requestBodyBytes, StandardCharsets.UTF_8));
@@ -119,7 +176,7 @@ public class MyHttpServletRequestImpl implements MyServletRequest {
         String ip = socket.getInetAddress().getHostAddress();
         int startHeaderIndex = requestContent.indexOf("\n");
         int endHeaderIndex = requestContent.indexOf("\r\n\r\n");
-//        this.requestLine = requestContent.substring(0, endHeaderIndex - 1);
+        this.requestHeader= requestContent.substring(0, endHeaderIndex - 1);
         String headerContent = requestContent.substring(startHeaderIndex + 1, endHeaderIndex);
         String[] split = headerContent.split("\r\n");
         this.headLine = requestContent.trim().split("\n");
@@ -129,7 +186,30 @@ public class MyHttpServletRequestImpl implements MyServletRequest {
         }
         requestMap.put("ip", ip);
         paramAndUriParse();
+        parseCookies();
     }
+
+    /**
+     * 解析cookies
+     */
+
+    private void parseCookies() {
+        String cookiesStr = this.requestMap.get("cookie");
+        if(cookiesStr == null){
+            this.cookies = null;
+            return;
+        }
+        String[] cookieTemp = cookiesStr.split(";");
+        this.cookies = new Cookie[cookieTemp.length];
+        for (int i = 0; i < cookieTemp.length; i++) {
+            String[] kv = cookieTemp[i].trim().split("=");
+            String key = kv[0];
+            String val = kv[1];
+            MyCookie cookie = new MyCookie(key, val);
+            cookies[i] = cookie;
+        }
+    }
+
     /**
      * 请求参数和URI解析
      */
@@ -167,6 +247,55 @@ public class MyHttpServletRequestImpl implements MyServletRequest {
     }
 
     /**
+     * 获取Session
+     * @return
+     */
+    @Override
+    public HttpSession getSession(){
+        if(this.cookies != null){
+//            for(Cookie cookie : this.cookies){
+//                if(cookie.getKey().equals("JSESSIONID")){
+//                    this.currentSession = SessionManager.getSession(Integer.parseInt(cookie.getValue()));//尝试获取SESSION
+//                    //如果会话挂机了 过了存活时间，此时拿不到，就需要重新创建一个SESSION
+//                    if(this.currentSession == null){//创建SESSION
+//                        this.initSessionMark = true;
+//                        this.currentSession = SessionManager.initAndGetSession();
+//                        LOGGER.info("会话过期，正在重新分配SESSION");
+//                    }
+//                    return this.currentSession;
+//                }
+//            }
+            for (int i = 0; i < cookies.length; i++) {
+                if(cookies[i].getKey().equals("JSESSIONID")){
+                    this.currentSession = SessionManager.getSession(Integer.parseInt(cookies[i].getValue()));//尝试获取SESSION
+                    //如果会话挂机了 过了存活时间，此时拿不到，就需要重新创建一个SESSION
+                    if(this.currentSession == null){//创建SESSION
+                        this.initSessionMark = true;
+                        this.currentSession = SessionManager.initAndGetSession();
+
+
+
+
+
+                        LOGGER.info("会话过期，正在重新分配SESSION");
+                        cookies[i].setValue(this.currentSession.getId().toString());
+                    }
+                    return this.currentSession;
+                }
+            }
+        }
+        //cookie都没，创建Session
+        this.initSessionMark = true;
+        this.currentSession = SessionManager.initAndGetSession();
+        return this.currentSession;
+    }
+
+    @Override
+    public Cookie[] getCookies() {
+        return this.cookies;
+    }
+
+    /**
      * 获取请求头中的value
      * @param key
      * @return
@@ -183,6 +312,16 @@ public class MyHttpServletRequestImpl implements MyServletRequest {
     @Override
     public Map<String, String> getHeaders() {
         return this.requestMap;
+    }
+
+    @Override
+    public void setAttribute(String key, Object val) {
+        this.map.put(key, val);
+    }
+
+    @Override
+    public Object getAttribute(String key) {
+        return map.get(key);
     }
 
     /**
@@ -249,5 +388,15 @@ public class MyHttpServletRequestImpl implements MyServletRequest {
     @Override
     public InputStream getInputStream() {
         return new ByteArrayInputStream(this.requestBodyBytes);
+    }
+
+    @Override
+    public RequestDispatcher getRequestDispatcher(String uri) {
+        return new RequestDispatcherImpl(uri);
+    }
+
+
+    public ServletContext getServletContext(){
+        return MyServletContextImpl.getContext();
     }
 }

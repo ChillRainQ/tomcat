@@ -12,7 +12,8 @@ public enum Status {
     HTTP_201(201, "Created"),
     HTTP_202(202, "Accepted"),
     HTTP_204(204, "No Content"),
-    HTTP_404(404, "Not Found")
+    HTTP_404(404, "Not Found"),
+    HTTP_302(302, "Redirect")
     ;
     Integer code;
     String message;
