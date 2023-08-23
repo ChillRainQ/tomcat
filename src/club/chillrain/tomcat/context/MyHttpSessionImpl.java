@@ -1,10 +1,11 @@
 package club.chillrain.tomcat.context;
 
+import club.chillrain.servlet.listener.HttpSessionAttributeEvent;
 import club.chillrain.servlet.listener.HttpSessionAttributeListener;
 import club.chillrain.servlet.listener.HttpSessionEvent;
 import club.chillrain.servlet.listener.HttpSessionListener;
 import club.chillrain.servlet.servlet.HttpSession;
-import club.chillrain.tomcat.core.SessionManager;
+import club.chillrain.tomcat.manager.SessionManager;
 import club.chillrain.tomcat.factory.ListenerFactoryImpl;
 
 import java.security.NoSuchAlgorithmException;
@@ -92,6 +93,14 @@ public class MyHttpSessionImpl implements HttpSession {
 
     @Override
     public void setAttribute(String key, Object val) {
+        //域对象修改行为
+        if(this.attributes.containsKey(key)){
+            this.httpSessionAttributeListener
+                    .updateAttribute(new HttpSessionAttributeEvent(this, key, this.attributes.get(key)));
+        }else{//添加行为
+            this.httpSessionAttributeListener
+                    .updateAttribute(new HttpSessionAttributeEvent(this, key, val));
+        }
         this.attributes.put(key, val);
 
     }
@@ -103,6 +112,8 @@ public class MyHttpSessionImpl implements HttpSession {
 
     @Override
     public Boolean removeAttribute(String key) {
+        this.httpSessionAttributeListener
+                .removeAttribute(new HttpSessionAttributeEvent(this, key, this.attributes.get(key)));
         Object remove = attributes.remove(key);
         return remove == null ? false : true;
     }

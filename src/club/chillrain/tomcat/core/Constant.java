@@ -13,10 +13,6 @@ import java.util.*;
  */
 public class Constant {
     /**
-     * 存储servlet的表
-     */
-//    public static final Map<String, HttpServlet> servletContext;
-    /**
      * 项目路径
      */
     public static final String src;
@@ -25,18 +21,6 @@ public class Constant {
      * HTTP响应码表
      */
     public static final Map<Integer, String> statusMap;
-    /**
-     * 所有的类
-     */
-//    private static final List<String> allClasses;
-    /**
-     * uri映射表
-     */
-//    public static final Map<String, String> uriMap;
-    /**
-     * 工作线程池
-     */
-//    public static final ThreadPoolExecutor servletPool;
 
     public static void init(){}
 
@@ -44,27 +28,11 @@ public class Constant {
         try {
             src = getProjectSrc();
             statusMap = Status.init();
-//            servletContext = new HashMap<>();
-//            allClasses = Prepare.getAllClasses(new File(src));
-//            uriMap = PreparedHandler.initURIMapping(allClasses);
-//            servletPool = servletPoolInit();
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
     }
 
-//    private static ThreadPoolExecutor servletPoolInit() throws IOException {
-//        Properties properties = new Properties();
-//        properties.load(new FileInputStream("resources/config.properties"));
-//        return new ThreadPoolExecutor(
-//                Integer.valueOf((String) properties.get("tomcat.core-poolsize")),
-//                Integer.valueOf((String) properties.get("tomcat.max-threads")),
-//                Integer.valueOf((String) properties.get("tomcat.keep-alivetime")),
-//                TimeUnit.SECONDS,
-//                new LinkedBlockingDeque<>(),
-//                new ThreadPoolExecutor.AbortPolicy()
-//        );
-//    }
     public static String getProjectSrc() throws IOException {
         Properties properties = new Properties();
         properties.load(new FileInputStream("resources/config.properties"));

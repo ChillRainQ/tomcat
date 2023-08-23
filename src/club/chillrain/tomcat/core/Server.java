@@ -1,6 +1,10 @@
 package club.chillrain.tomcat.core;
 
+import club.chillrain.servlet.listener.ServletContextEvent;
+import club.chillrain.servlet.listener.ServletContextListener;
 import club.chillrain.tomcat.config.TomcatConfig;
+import club.chillrain.tomcat.context.MyServletContextImpl;
+import club.chillrain.tomcat.manager.ServletManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -19,10 +23,21 @@ public class Server {
     private final static Logger LOGGER = LoggerFactory.getLogger("Server");
     public void start() throws IOException, ClassNotFoundException, InstantiationException, IllegalAccessException {
         Constant.init();//常量初始化
-        TomcatConfig.tomcatInit();
-        ServletRunner servletRunner = new ServletRunner();  //初始化Servlet运行环境
-        servletRunner.init();
+        TomcatConfig.tomcatInit();//配置文件读取配置
+        ServletManager servletManager = new ServletManager();  //初始化Servlet运行环境
+        servletManager.init();
         ServerSocket serverSocket = Server.serverInit();//服务器初始化（读取配置文件）
+
+        //servletContext域对象初始化监听
+        MyServletContextImpl servletContext = (MyServletContextImpl) MyServletContextImpl.getContext();
+        ServletContextListener servletContextListener = servletContext.getServletContextListener();
+        ServletContextEvent event = servletContext.getEvent();
+        servletContextListener.initServletContext(event);
+
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            servletContextListener.destroyed(event);
+        }));
+
         while (true) {
             LOGGER.info("--->" + Thread.currentThread() +"准备接收HTTP请求");
             Socket socket = serverSocket.accept();
@@ -62,7 +77,7 @@ public class Server {
         @Override
         public void run() {
             try {
-                new ServletRunner.Processor(socket).process();
+                new ServletManager.Processor(socket).process();
                 socket.close();
                 LOGGER.info("--->已完成请求");
             } catch (IOException e) {

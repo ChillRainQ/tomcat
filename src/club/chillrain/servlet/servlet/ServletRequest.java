@@ -4,7 +4,7 @@ import java.io.BufferedReader;
 import java.io.InputStream;
 import java.util.Map;
 
-public interface MyServletRequest {
+public interface ServletRequest {
     HttpSession getSession();
     Cookie[] getCookies();
     ServletContext getServletContext();
@@ -48,4 +48,6 @@ public interface MyServletRequest {
     InputStream getInputStream();
 
     RequestDispatcher getRequestDispatcher(String uri);
+
+    Boolean removeAttribute(String key);
 }

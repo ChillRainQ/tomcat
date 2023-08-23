@@ -1,16 +1,17 @@
-package club.chillrain.tomcat.core;
+package club.chillrain.tomcat.manager;
 
-import club.chillrain.servlet.listener.Listener;
 import club.chillrain.servlet.listener.ServletRequestEvent;
 import club.chillrain.servlet.listener.ServletRequestListener;
 import club.chillrain.servlet.servlet.Cookie;
 import club.chillrain.servlet.servlet.HttpServlet;
-import club.chillrain.servlet.servlet.MyServletResponse;
+import club.chillrain.servlet.servlet.ServletResponse;
 import club.chillrain.servlet.servlet.RequestDispatcher;
-import club.chillrain.tomcat.context.request.MyHttpServletRequestImpl;
+import club.chillrain.tomcat.context.request.HttpServletRequestImpl;
+import club.chillrain.tomcat.core.Constant;
+import club.chillrain.tomcat.core.Prepare;
 import club.chillrain.tomcat.enums.Status;
-import club.chillrain.tomcat.context.request.MyHttpServletResponseImpl;
-import club.chillrain.tomcat.impl.RequestDispatcherImpl;
+import club.chillrain.tomcat.context.request.HttpServletResponseImpl;
+import club.chillrain.tomcat.core.RequestDispatcherImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -24,9 +25,9 @@ import java.util.Map;
 /**
  * Servlet的运行环境
  */
-public class ServletRunner{
+public class ServletManager {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger("servletContext");
+    private static final Logger LOGGER = LoggerFactory.getLogger("servletManager");
     /**
      * Servlet的容器
      */
@@ -70,20 +71,20 @@ public class ServletRunner{
          */
         public void process() throws ClassNotFoundException, IOException, InstantiationException, IllegalAccessException, NoSuchAlgorithmException {
             LOGGER.info("--->" + Thread.currentThread() + "处理请求");
-            MyHttpServletRequestImpl request = new MyHttpServletRequestImpl(socket);
+            HttpServletRequestImpl request = new HttpServletRequestImpl(socket);
             //监听器监听创建
             ServletRequestListener listener = request.getListener();
             ServletRequestEvent requestEvent = new ServletRequestEvent(request);
             listener.initRequest(requestEvent);//运行用户自定义的监听器动作
 
 
-            MyServletResponse response = new MyHttpServletResponseImpl(socket);
+            ServletResponse response = new HttpServletResponseImpl(socket);
             String uri = request.getRemoteURI();
             LOGGER.info("--->请求URI为：" + uri);
             if("/".equals(uri)){//首页
                 response.getWriter().write("<h1>Here is home</h1>");
             }else{
-                String className = ServletRunner.uriMap.get(uri);
+                String className = ServletManager.uriMap.get(uri);
                 if (className == null || uri == null){//不存在的资源
                     response.setStatus(Status.HTTP_404.getCode());
                     response.getWriter().write(Constant.errorPage
@@ -103,7 +104,7 @@ public class ServletRunner{
             //监听器监听销毁
             listener.destroyed(requestEvent);
 
-            ((MyHttpServletResponseImpl)response).finishedResponse();
+            ((HttpServletResponseImpl)response).finishedResponse();
         }
     }
 

@@ -1,7 +1,7 @@
 package club.chillrain.tomcat.context.request;
 
 import club.chillrain.servlet.servlet.Cookie;
-import club.chillrain.servlet.servlet.MyServletResponse;
+import club.chillrain.servlet.servlet.ServletResponse;
 import club.chillrain.tomcat.core.Constant;
 import club.chillrain.tomcat.enums.Status;
 import org.slf4j.Logger;
@@ -21,7 +21,7 @@ import java.util.Map;
 /**
  * @author ChillRain 2023 07 22
  */
-public class MyHttpServletResponseImpl implements MyServletResponse {
+public class HttpServletResponseImpl implements ServletResponse {
     private static final Logger LOGGER = LoggerFactory.getLogger("Response");
     /**
      * HTTP请求的Socket连接
@@ -54,7 +54,7 @@ public class MyHttpServletResponseImpl implements MyServletResponse {
     private List<StringBuffer> cookieBuffers;
 //    private StringBuffer cookieBuffer;
 
-    public MyHttpServletResponseImpl(Socket socket) throws IOException {
+    public HttpServletResponseImpl(Socket socket) throws IOException {
         this.socket = socket;
         this.status = 200;
 //        this.outputStream = socket.getOutputStream();

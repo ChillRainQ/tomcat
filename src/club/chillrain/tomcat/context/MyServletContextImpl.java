@@ -1,6 +1,11 @@
 package club.chillrain.tomcat.context;
 
+import club.chillrain.servlet.listener.ServletContextAttributeEvent;
+import club.chillrain.servlet.listener.ServletContextAttributeListener;
+import club.chillrain.servlet.listener.ServletContextEvent;
+import club.chillrain.servlet.listener.ServletContextListener;
 import club.chillrain.servlet.servlet.ServletContext;
+import club.chillrain.tomcat.factory.ListenerFactoryImpl;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -13,11 +18,22 @@ public class MyServletContextImpl implements ServletContext {
     /**
      * 域对象存储容器
      */
-    private Map<String, Object> servletContextAttributes;
+    private Map<String, Object> attributes;
+    private ServletContextEvent event;
+    private ServletContextListener servletContextListener;
+    private ServletContextAttributeListener servletContextAttributeListener;
 
     @Override
     public void setAttribute(String key, Object val) {
-        this.servletContextAttributes.put(key, val);
+        //修改功能监听
+        if(this.attributes.containsKey(key)){
+            this.servletContextAttributeListener
+                    .updateAttribute(new ServletContextAttributeEvent(this, key, this.attributes.get(key)));
+        }else{
+            this.servletContextAttributeListener
+                    .addAttribute(new ServletContextAttributeEvent(this, key, val));
+        }
+        this.attributes.put(key, val);
     }
 
     /**
@@ -25,9 +41,18 @@ public class MyServletContextImpl implements ServletContext {
      */
     private static ServletContext application = new MyServletContextImpl();
     private MyServletContextImpl() {
-        this.servletContextAttributes = new ConcurrentHashMap<>();
-        if(application != null){
-            throw new RuntimeException("非法的操作");
+        try {
+            this.attributes = new ConcurrentHashMap<>();
+            this.servletContextListener = (ServletContextListener) ListenerFactoryImpl.getListener(this);
+            this.servletContextAttributeListener = (ServletContextAttributeListener) ListenerFactoryImpl.getAttributeListener(this);
+            this.event = new ServletContextEvent(this);
+            if(application != null){
+                throw new RuntimeException("非法的操作");
+            }
+        } catch (InstantiationException e) {
+            throw new RuntimeException(e);
+        } catch (IllegalAccessException e) {
+            throw new RuntimeException(e);
         }
     }
     public static ServletContext getContext(){
@@ -36,11 +61,24 @@ public class MyServletContextImpl implements ServletContext {
 
     @Override
     public Object getAttribute(String key) {
-        return this.servletContextAttributes.get(key);
+        return this.attributes.get(key);
     }
 
     @Override
-    public void removeAttribute(String key) {
+    public Boolean removeAttribute(String key) {
+        this.servletContextAttributeListener
+                .removeAttribute(new ServletContextAttributeEvent(this, key, this.attributes.get(key)));
+        Object remove = this.attributes.remove(key);
+        return remove != null ? true : false;
+    }
 
+    public ServletContextEvent getEvent(){
+        return this.event;
+    }
+    public ServletContextListener getServletContextListener(){
+        return this.servletContextListener;
+    }
+    public ServletContextAttributeListener getServletContextAttributeListener(){
+        return this.servletContextAttributeListener;
     }
 }

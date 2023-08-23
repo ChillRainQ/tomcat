@@ -2,14 +2,14 @@ package club.chillrain.tomcat.factory;
 
 import club.chillrain.servlet.listener.*;
 import club.chillrain.servlet.servlet.HttpSession;
-import club.chillrain.servlet.servlet.MyServletRequest;
+import club.chillrain.servlet.servlet.ServletRequest;
 import club.chillrain.servlet.servlet.ServletContext;
+import club.chillrain.tomcat.components.DefaultListener;
 import club.chillrain.tomcat.exception.NotListenerException;
 import club.chillrain.tomcat.interfaces.abstracts.ListenerFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.servlet.http.HttpServletRequest;
 
 
 /**
@@ -26,7 +26,7 @@ public class ListenerFactoryImpl extends ListenerFactory {
 
 //    @Override
     public static Listener getListener(Object obj) throws InstantiationException, IllegalAccessException {
-        if(obj instanceof MyServletRequest && servletRequestListenerClass != null){
+        if(obj instanceof ServletRequest && servletRequestListenerClass != null){
             return servletRequestListenerClass.newInstance();
         }
         if(obj instanceof HttpSession && httpSessionListenerClass != null){
@@ -35,11 +35,11 @@ public class ListenerFactoryImpl extends ListenerFactory {
         if(obj instanceof ServletContext && servletContextListenerClass != null){
             return servletContextListenerClass.newInstance();
         }
-        return null;
+        return new DefaultListener();
     }
 
     public static Listener getAttributeListener(Object obj) throws InstantiationException, IllegalAccessException {
-        if(obj instanceof HttpServletRequest && servletRequestAttributeListenerClass != null){
+        if(obj instanceof ServletRequest && servletRequestAttributeListenerClass != null){
             return servletRequestAttributeListenerClass.newInstance();
         }
         if(obj instanceof HttpSession && httpSessionAttributeListenerClass != null){

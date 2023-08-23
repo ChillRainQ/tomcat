@@ -1,19 +1,19 @@
 package club.chillrain.servlet.listener;
 
-import club.chillrain.servlet.servlet.MyServletRequest;
+import club.chillrain.servlet.servlet.ServletRequest;
 import club.chillrain.servlet.servlet.ServletContext;
 
 /**
  * @author ChillRain 2023 08 20
  */
 public class ServletRequestEvent {
-    private MyServletRequest servletRequest;
+    private ServletRequest servletRequest;
 
-    public ServletRequestEvent(MyServletRequest servletRequest) {
+    public ServletRequestEvent(ServletRequest servletRequest) {
         this.servletRequest = servletRequest;
     }
 
-    public MyServletRequest getServletRequest() {
+    public ServletRequest getServletRequest() {
         return servletRequest;
     }
     public ServletContext getServletContext(){

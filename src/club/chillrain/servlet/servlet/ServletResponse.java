@@ -3,7 +3,7 @@ package club.chillrain.servlet.servlet;
 import java.io.OutputStream;
 import java.io.PrintWriter;
 
-public interface MyServletResponse {
+public interface ServletResponse {
     /**
      * 设置字符集
      * @param charset

@@ -1,8 +1,8 @@
 package club.chillrain.tomcat.webapps.user;
 
 import club.chillrain.servlet.servlet.HttpServlet;
-import club.chillrain.servlet.servlet.MyServletRequest;
-import club.chillrain.servlet.servlet.MyServletResponse;
+import club.chillrain.servlet.servlet.ServletRequest;
+import club.chillrain.servlet.servlet.ServletResponse;
 import club.chillrain.servlet.annotation.WebServlet;
 
 import java.io.*;
@@ -13,7 +13,7 @@ import java.io.*;
 @WebServlet("/hello")
 public class HelloServlet extends HttpServlet {
     @Override
-    public void service(MyServletRequest request, MyServletResponse response) throws IOException {
+    public void service(ServletRequest request, ServletResponse response) throws IOException {
 //        String name = request.getParameter("name");
 //        response.getWriter().write(name);
 //        response.getWriter().write(request.getRemoteAddr());

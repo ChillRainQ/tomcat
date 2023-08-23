@@ -2,8 +2,8 @@ package club.chillrain.tomcat.webapps.user;
 
 import club.chillrain.servlet.servlet.Cookie;
 import club.chillrain.servlet.servlet.HttpServlet;
-import club.chillrain.servlet.servlet.MyServletRequest;
-import club.chillrain.servlet.servlet.MyServletResponse;
+import club.chillrain.servlet.servlet.ServletRequest;
+import club.chillrain.servlet.servlet.ServletResponse;
 import club.chillrain.servlet.annotation.WebServlet;
 
 /**
@@ -12,7 +12,7 @@ import club.chillrain.servlet.annotation.WebServlet;
 @WebServlet(value = "/test", loadOnStartup = 1)
 public class TestServlet extends HttpServlet {
     @Override
-    public void service(MyServletRequest request, MyServletResponse response) {
+    public void service(ServletRequest request, ServletResponse response) {
 //        response.getWriter().write((request.getCookies()[0].getKey()));
         Cookie cookie1 = new Cookie("test", "lidaxin");
         cookie1.setMaxAge(36000L);

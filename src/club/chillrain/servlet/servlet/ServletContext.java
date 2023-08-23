@@ -6,5 +6,5 @@ package club.chillrain.servlet.servlet;
 public interface ServletContext {
     void setAttribute(String key, Object val);
     Object getAttribute(String key);
-    void removeAttribute(String key);
+    Boolean removeAttribute(String key);
 }

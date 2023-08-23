@@ -1,8 +1,9 @@
-package club.chillrain.tomcat.core;
+package club.chillrain.tomcat.manager;
 
 import club.chillrain.servlet.listener.HttpSessionListener;
 import club.chillrain.servlet.servlet.HttpSession;
 import club.chillrain.tomcat.context.MyHttpSessionImpl;
+import club.chillrain.tomcat.core.ProduceAndConsumClearSession;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

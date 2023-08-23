@@ -1,10 +1,10 @@
-package club.chillrain.tomcat.impl;
+package club.chillrain.tomcat.core;
 
 import club.chillrain.servlet.servlet.HttpServlet;
-import club.chillrain.servlet.servlet.MyServletRequest;
-import club.chillrain.servlet.servlet.MyServletResponse;
+import club.chillrain.servlet.servlet.ServletRequest;
+import club.chillrain.servlet.servlet.ServletResponse;
 import club.chillrain.servlet.servlet.RequestDispatcher;
-import club.chillrain.tomcat.core.ServletRunner;
+import club.chillrain.tomcat.manager.ServletManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -25,7 +25,7 @@ public class RequestDispatcherImpl implements RequestDispatcher {
     }
 
     @Override
-    public void include(MyServletRequest request, MyServletResponse response) {
+    public void include(ServletRequest request, ServletResponse response) {
         try{
             HttpServlet servlet = this.getHttpServlet(request, response);
             servlet.init();
@@ -51,18 +51,18 @@ public class RequestDispatcherImpl implements RequestDispatcher {
      * @throws InstantiationException
      * @throws IllegalAccessException
      */
-    private HttpServlet getHttpServlet(MyServletRequest request, MyServletResponse response) throws ClassNotFoundException, InstantiationException, IllegalAccessException {
-        HttpServlet servlet = ServletRunner.servletContext.get(this.uri);//容器中没有
+    private HttpServlet getHttpServlet(ServletRequest request, ServletResponse response) throws ClassNotFoundException, InstantiationException, IllegalAccessException {
+        HttpServlet servlet = ServletManager.servletContext.get(this.uri);//容器中没有
         if(servlet == null){//尝试反射获取
-            String className = ServletRunner.uriMap.get(this.uri);
+            String className = ServletManager.uriMap.get(this.uri);
             Class<?> clazz = Class.forName(className);
             servlet = (HttpServlet)clazz.newInstance();
-            ServletRunner.servletContext.put(uri, servlet);//写入容器
+            ServletManager.servletContext.put(uri, servlet);//写入容器
         }
         return servlet;
     }
     @Override
-    public void forward(MyServletRequest request, MyServletResponse response) {
+    public void forward(ServletRequest request, ServletResponse response) {
         try{
             HttpServlet servlet = this.getHttpServlet(request, response);
             PrintWriter writer = response.getWriter();

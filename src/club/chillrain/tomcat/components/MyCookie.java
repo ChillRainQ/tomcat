@@ -1,4 +1,4 @@
-package club.chillrain.tomcat.core;
+package club.chillrain.tomcat.components;
 
 import club.chillrain.servlet.servlet.Cookie;
 
